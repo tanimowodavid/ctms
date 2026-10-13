@@ -1,4 +1,4 @@
-# TalentFlow: Cohort & Talent Management Platform
+# TMS: Cohort & Talent Management Platform
 
 ### Idea One-Pager
 
