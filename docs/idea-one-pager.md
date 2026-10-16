@@ -5,10 +5,11 @@
 - **Track:** Backend Development | Stack: Python, FastAPI, PostgreSQL, Docker
 - **Target user:** Accelerator program directors, bootcamp coordinators, and administrators managing multi-track technical cohorts.
 - **Problem:** Tech talent programs often rely on fragmented tools to handle applicant intake, track-based mentoring, role permissions, and community communication.
-- **Entities:** Cohort, Track, Profile, Conversation, Message
-- **Core flow:** Public widget submission (POST /api/cohorts/{embedToken}/apply) -> Admin review & talent promotion (PATCH /api/profiles/{id}) -> Authenticated messaging in general/track chats (POST /api/conversations/{id}/messages)
+- **Entities:** Cohort, Track, Application, Profile, Conversation, Message
+- **Core flow:** Public widget submission creates a cohort-bound application -> Admin reviews and approves the application, creating a Talent profile -> Authenticated messaging in general/track chats
 - **In scope:**
-  - Role-based access control (Super Admin, Admin, Mentor, Talent, Applicant)
+  - Role-based access control for users (Super Admin, Admin, Mentor, Talent); applicants are not users until approved
+  - Cohort-bound applicant records that admins can review and approve into Talent profiles
   - Cohort-specific public widget script endpoint for applicant intake
   - Normalized messaging system with general cohort and track-specific conversations
   - Global staff management decoupled from single-cohort constraints
@@ -41,7 +42,7 @@
 **Key technical decisions:**
 
 - Python with FastAPI chosen for high performance, automatic OpenAPI documentation, and robust async request handling.
-- Single Profile table architecture with Enum roles implemented to cleanly handle transitions from Applicant to Talent while maintaining unified user data.
+- Applications are stored separately from user profiles; approving an application creates a Talent profile, while applicants have no account or role before approval.
 
 **Blockers / risks:**
 
