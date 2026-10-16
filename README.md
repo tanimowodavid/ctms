@@ -1,8 +1,47 @@
 # CTMS
 
-Cohort and Talent management system for organising talents in multiple cohort into their different tracks.
+CTMS is a cohort and talent management system for organising talents into cohorts and tracks.
 
-### Project Structure
+## Tech Stack
+
+- Python 3.12+
+- FastAPI
+- SQLAlchemy with PostgreSQL (`psycopg2`)
+- Pydantic Settings
+- Alembic, available for database migrations
+
+## Run Locally
+
+Install the project dependencies with `uv`:
+
+```sh
+uv sync
+```
+
+Start the development server:
+
+```sh
+uv run uvicorn app.main:app --reload
+```
+
+The health endpoint is `GET http://127.0.0.1:8000/health`; it returns:
+
+```json
+{ "status": "ok" }
+```
+
+## Docker
+
+The project is intended to run using Docker, but Docker configuration and setup are not yet complete. Use the local instructions above for now.
+
+## Project Docs
+
+- [Entity relationship diagram](docs/ERD.md)
+- [API specification](docs/api-spec.md)
+- [Project overview](docs/idea-one-pager.md)
+- [Work plan](docs/work-plan.md)
+
+## Project Structure
 
 ```text
 CTMS/
