@@ -1,4 +1,4 @@
-# TMS API Specification
+# CTMS API Specification
 
 This document outlines the RESTful API endpoints for the **TMS** platform, built using Python and FastAPI. The architecture supports public applicant intake via embedded widgets, role-based user management (Super Admin, Admin, Mentor, Talent), and normalized chat messaging. Applicants are cohort-bound application records, not users; an approved application creates a Talent profile.
 

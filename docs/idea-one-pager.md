@@ -1,4 +1,4 @@
-# TMS: Cohort & Talent Management Platform
+# CTMS: Cohort & Talent Management Platform
 
 ### Idea One-Pager
 
