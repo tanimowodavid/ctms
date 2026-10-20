@@ -14,9 +14,9 @@ Deliver a backend-first cohort and talent management platform with a small appli
 
 - Confirm lifecycle and permissions for cohorts, tracks, applications, profiles, conversations, and messages.
 - Align the ERD with the one-application-per-normalized-email-per-cohort rule, auto-closing intake at `startDate`, automatic role tags, password setup tokens, and unique general/track conversations.
-- Decide how one person applying to multiple cohorts interacts with the globally unique profile email and single-cohort talent profile.
-- Define staff onboarding credentials and the initial Super Admin bootstrap process.
-- Finalize JWT lifetime/refresh behavior, widget script delivery and embedding expectations, and the production email provider when known.
+- Use one cohort/track assignment per Talent Profile; a second approval for an email with an existing Profile conflicts. Multi-cohort enrollment is out of MVP scope.
+- Onboard Staff as inactive Profiles using the one-time password-setup email flow. Bootstrap the first Super Admin through a one-time CLI command that refuses to run if one already exists.
+- MVP access JWTs expire after 15 minutes with no refresh flow. Finalize widget script delivery and embedding expectations and select the production email provider when known.
 - Add the public widget script and demo/form page delivery contract to the API or implementation documentation.
 
 **Exit criteria:** ERD and API contract describe the same fields, status transitions, permissions, and error cases. Remaining undecided integrations have explicit interfaces and are not blockers for local development.
@@ -113,7 +113,7 @@ Deliver a backend-first cohort and talent management platform with a small appli
 - Implement staff-only application list/detail endpoints with cohort and status filters.
 - Implement approve and reject actions for Admins and Super Admins; keep pending applications reviewable after intake closes.
 - On approval, atomically mark the application approved and create an inactive Talent profile using its cohort and selected track.
-- Send a one-time password setup link through the email adapter; activate the talent only after successful setup.
+- Persist a setup-email outbox event with approval and profile creation; retry delivery independently. Activate the Talent only after successful one-time password setup.
 - Handle concurrent/repeated approval safely and test email/profile/application failure boundaries.
 
 **Exit criteria:** An application cannot create more than one profile, approval uses the submitted track, rejection creates no profile, and email delivery failures do not leave inconsistent application/profile state.
@@ -165,6 +165,4 @@ Deliver a backend-first cohort and talent management platform with a small appli
 
 - Production email provider and sender/domain setup.
 - Production hosting/deployment target and CI provider.
-- Whether users can apply to multiple cohorts and how an existing Talent profile is handled when another application is approved.
-- Staff account password setup and the secure initial Super Admin creation procedure.
-- Exact JWT access/refresh token policy and widget hosting/embedding constraints.
+- Widget hosting/embedding constraints.

@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+if TYPE_CHECKING:
+	from .cohort import Cohort
+	from .profile import Profile
+	from .track import Track
 
 
 class Conversation(Base):
@@ -24,8 +32,8 @@ class Conversation(Base):
 	cohort_id: Mapped[str | None] = mapped_column(ForeignKey("cohort.id", ondelete="CASCADE"))
 	track_id: Mapped[str | None] = mapped_column(ForeignKey("track.id", ondelete="CASCADE"))
 
-	cohort: Mapped["Cohort | None"] = relationship(back_populates="conversation")
-	track: Mapped["Track | None"] = relationship(back_populates="conversation")
+	cohort: Mapped[Cohort | None] = relationship(back_populates="conversation", foreign_keys=[cohort_id])
+	track: Mapped[Track | None] = relationship(back_populates="conversation", foreign_keys=[track_id])
 	messages: Mapped[list["Message"]] = relationship(back_populates="conversation", cascade="all, delete-orphan")
 
 
@@ -38,5 +46,5 @@ class Message(Base):
 	content: Mapped[str] = mapped_column(Text, nullable=False)
 	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-	conversation: Mapped["Conversation"] = relationship(back_populates="messages")
-	user: Mapped["Profile"] = relationship(back_populates="messages")
+	conversation: Mapped[Conversation] = relationship(back_populates="messages", foreign_keys=[conversation_id])
+	user: Mapped[Profile] = relationship(back_populates="messages", foreign_keys=[user_id])

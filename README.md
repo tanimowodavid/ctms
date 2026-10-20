@@ -24,6 +24,18 @@ Start the development server:
 uv run uvicorn app.main:app --reload
 ```
 
+Run the automated tests:
+
+```sh
+uv run pytest
+```
+
+Apply database migrations after configuring `DATABASE_URL` and starting PostgreSQL:
+
+```sh
+uv run alembic upgrade head
+```
+
 The health endpoint is `GET http://127.0.0.1:8000/health`; it returns:
 
 ```json
@@ -81,7 +93,7 @@ CTMS/
 │   │
 │   └── main.py                   # FastAPI app initialization, CORS middleware, routers
 │
-├── alembic/                      # Database Migration History (SQLAlchemy/Alembic)
+├── alembic/                      # Alembic configuration and migration history
 ├── docs/                         # Week 1 Documentation Deliverables
 │   ├── idea-one-pager.md         # Problem, target user, core flow, scope, risks
 │   ├── work-plan.md              # 3-week execution plan and timeline
@@ -89,9 +101,8 @@ CTMS/
 │   └── api-spec.md               # Comprehensive REST API specifications
 │
 ├── tests/                        # Pytest unit & integration tests
-│   ├── conftest.py
-│   ├── test_auth.py
-│   └── test_applications.py
+│   ├── conftest.py               # Shared SQLite test database fixtures
+│   └── test_model_constraints.py # Database invariant tests
 │
 ├── .env.example                  # Environment variable template
 ├── .gitignore                    # Ignored files (venv, __pycache__, .env)

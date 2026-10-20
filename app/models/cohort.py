@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import DateTime, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+if TYPE_CHECKING:
+	from .application import Application
+	from .messaging import Conversation
+	from .profile import Profile
+	from .track import Track
 
 
 class Cohort(Base):
@@ -18,9 +27,20 @@ class Cohort(Base):
 	status: Mapped[str] = mapped_column(String(50), nullable=False)
 	embed_token: Mapped[str] = mapped_column(String(255), nullable=False)
 
-	tracks: Mapped[list["Track"]] = relationship(back_populates="cohort", cascade="all, delete-orphan")
-	applications: Mapped[list["Application"]] = relationship(back_populates="cohort", cascade="all, delete-orphan")
-	profiles: Mapped[list["Profile"]] = relationship(back_populates="cohort", passive_deletes="all")
-	conversation: Mapped["Conversation | None"] = relationship(
-		back_populates="cohort", cascade="all, delete-orphan", uselist=False
+	tracks: Mapped[list[Track]] = relationship(back_populates="cohort", cascade="all, delete-orphan")
+	applications: Mapped[list[Application]] = relationship(
+		back_populates="cohort",
+		cascade="all, delete-orphan",
+		foreign_keys="Application.cohort_id",
+	)
+	profiles: Mapped[list[Profile]] = relationship(
+		back_populates="cohort",
+		passive_deletes="all",
+		foreign_keys="Profile.cohort_id",
+	)
+	conversation: Mapped[Conversation | None] = relationship(
+		back_populates="cohort",
+		cascade="all, delete-orphan",
+		foreign_keys="Conversation.cohort_id",
+		uselist=False,
 	)

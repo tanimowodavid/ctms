@@ -22,6 +22,8 @@ Authorization: Bearer <jwt_access_token>
 
 Super Admins, Admins, and Mentors are staff and can access conversations across all cohorts and tracks. Talents can access only the general conversation for their own cohort and the track conversation for their assigned track. The API enforces these rules on conversation discovery, message history, and message creation; frontend filtering is not an authorization boundary. Suspended talents cannot access conversations or messages.
 
+Access tokens expire after 15 minutes. The MVP does not provide a refresh-token flow.
+
 ---
 
 ## 1. Public Widget Endpoints (Unauthenticated)
@@ -57,6 +59,8 @@ Super Admins, Admins, and Mentors are staff and can access conversations across 
 
 ## 2. Authentication Endpoints
 
+The initial Super Admin is created through a one-time CLI bootstrap that refuses to run if a Super Admin already exists. There is no public bootstrap endpoint.
+
 ### User Login
 
 - **Method:** `POST`
@@ -85,11 +89,11 @@ Super Admins, Admins, and Mentors are staff and can access conversations across 
     ```
   - `401 Unauthorized`: Invalid credentials.
 
-### Complete Talent Password Setup
+### Complete Password Setup
 
 - **Method:** `POST`
 - **Path:** `/auth/setup-password`
-- **Description:** Completes account setup using the one-time token emailed after application approval. On success, stores the password hash and changes the Talent profile from `INACTIVE` to `ACTIVE`.
+- **Description:** Completes account setup using the one-time token emailed after application approval or staff onboarding. Tokens are single-use and expire 24 hours after issuance. On success, stores the password hash and changes the inactive Talent or Staff profile to `ACTIVE`.
 - **Request Body:**
   ```json
   {
@@ -99,7 +103,7 @@ Super Admins, Admins, and Mentors are staff and can access conversations across 
   ```
 - **Responses:**
   - `204 No Content`: Password set and account activated.
-  - `400 Bad Request`: Invalid or expired token, or password does not meet requirements.
+  - `400 Bad Request`: Invalid, expired, or already-used token, or password does not meet requirements.
 
 ---
 
@@ -206,7 +210,7 @@ Super Admins, Admins, and Mentors are staff and can access conversations across 
 
 - **Method:** `POST`
 - **Path:** `/applications/{applicationId}/approve`
-- **Description:** Approves a pending application and atomically creates an `INACTIVE` Talent profile using the applicant's name, email, cohort, and selected track. The applicant receives a one-time email setup link to create their password; completing setup stores the password hash and activates the profile. Approval is allowed after cohort intake closes. Repeated approval of an already processed application is rejected.
+- **Description:** Approves a pending application and atomically creates an `INACTIVE` Talent profile using the applicant's name, email, cohort, and selected track, along with a durable email-outbox event for password setup. Email delivery retries independently and does not roll back approval. The applicant receives a single-use setup link, valid for 24 hours; completing setup stores the password hash and activates the profile. Approval is allowed after cohort intake closes. Repeated approval of an already processed application is rejected.
 - **Request Body:**
   No request body. The application’s selected track is used.
 - **Responses:**
@@ -230,7 +234,7 @@ Super Admins, Admins, and Mentors are staff and can access conversations across 
 
 - **Method:** `POST`
 - **Path:** `/profiles/staff`
-- **Description:** Provisions a new admin or mentor account. Admins can create mentors; Super Admins can create admins.
+- **Description:** Provisions a new inactive Admin or Mentor account. Admins can create Mentors; Super Admins can create Admins. A one-time password-setup email is queued; the profile becomes active after successful setup.
 - **Request Body:**
   ```json
   {

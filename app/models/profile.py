@@ -1,14 +1,28 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+if TYPE_CHECKING:
+	from .cohort import Cohort
+	from .messaging import Message
+	from .track import Track
 
 
 class Profile(Base):
 	__tablename__ = "profile"
 	__table_args__ = (
+		ForeignKeyConstraint(
+			["track_id", "cohort_id"],
+			["track.id", "track.cohort_id"],
+			ondelete="RESTRICT",
+			name="fk_profile_track_cohort",
+		),
 		UniqueConstraint("email", name="uq_profile_email"),
 		CheckConstraint(
 			"role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'TALENT')",
@@ -37,8 +51,12 @@ class Profile(Base):
 	bio: Mapped[str | None] = mapped_column(String)
 	tag: Mapped[str | None] = mapped_column(String(100))
 	cohort_id: Mapped[str | None] = mapped_column(ForeignKey("cohort.id", ondelete="RESTRICT"))
-	track_id: Mapped[str | None] = mapped_column(ForeignKey("track.id", ondelete="RESTRICT"))
+	track_id: Mapped[str | None] = mapped_column(String(36))
 
-	cohort: Mapped["Cohort | None"] = relationship(back_populates="profiles")
-	track: Mapped["Track | None"] = relationship(back_populates="profiles")
-	messages: Mapped[list["Message"]] = relationship(back_populates="user", passive_deletes="all")
+	cohort: Mapped[Cohort | None] = relationship(back_populates="profiles", foreign_keys=[cohort_id])
+	track: Mapped[Track | None] = relationship(back_populates="profiles", foreign_keys=[track_id])
+	messages: Mapped[list[Message]] = relationship(
+		back_populates="user",
+		passive_deletes="all",
+		foreign_keys="Message.user_id",
+	)
