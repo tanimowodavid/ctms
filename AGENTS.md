@@ -20,7 +20,7 @@
 - Implemented API routes: `GET /api/v1/health`, login, password setup, and `POST /api/v1/profiles/staff`.
 - Admins may create Mentors; only Super Admins may create Admins. Staff accounts remain inactive until one-time setup-link redemption.
 - Setup email uses the durable outbox and the separate Compose `email-worker`, configured through SMTP environment variables. `.env.example` has placeholders; supply real local values only in ignored `.env`.
-- The next planned product work is Talent application approval and onboarding, reusing the auth and outbox patterns, then cohort creation and public application intake. Confirm sequencing in `.planning/progress-tracker.md` before starting.
+- Talent application review and onboarding are implemented with Admin/Super Admin list/detail/approve/reject endpoints, transactional Talent Profile and email-outbox creation, and the existing one-time password setup flow. The next planned product work is messaging and its authorization/lifecycle tests; confirm sequencing in `.planning/progress-tracker.md` before starting.
 
 ## Local workflow
 

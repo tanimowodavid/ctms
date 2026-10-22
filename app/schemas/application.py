@@ -1,6 +1,8 @@
 from datetime import datetime
 import re
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -60,3 +62,15 @@ class PublicApplicationOptions(BaseModel):
 	start_date: datetime = Field(alias="startDate")
 	accepting_applications: bool = Field(alias="acceptingApplications")
 	tracks: list[PublicTrackOption]
+
+
+class ApplicationResponse(BaseModel):
+	model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
+	id: str
+	full_name: str = Field(alias="fullName")
+	email: str
+	status: Literal["PENDING", "APPROVED", "REJECTED"]
+	cohort_id: str = Field(alias="cohortId")
+	track_id: str = Field(alias="trackId")
+	created_at: datetime = Field(alias="createdAt")

@@ -4,17 +4,17 @@ Last reviewed: 2026-10-22
 
 ## Current state
 
-The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, staff onboarding, cohort/track management, and public application intake with a standalone widget. Application review/Talent lifecycle and messaging workflows remain unimplemented.
+The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, staff onboarding, cohort/track management, public application intake with a standalone widget, and Admin/Super Admin application review with Talent onboarding. Messaging workflows remain unimplemented.
 
 Verified implementation observations:
 
 - [x] FastAPI app exposes `GET /api/v1/health` returning `{"status":"ok"}`.
 - [x] Python package and core modules exist for configuration, database setup, security, models, schemas, services, and endpoint modules.
 - [x] `uv` project metadata and lockfile are present; the project requires Python 3.12+.
-- [x] Pytest suite uses dedicated PostgreSQL test databases; sixteen tests pass, including fresh-database migration, staff onboarding, cohort management, public application intake/CORS, and email-worker retry coverage.
+- [x] Pytest suite uses dedicated PostgreSQL test databases; nineteen tests pass, including fresh-database migration, application review/onboarding, staff onboarding, cohort management, public application intake/CORS, and email-worker retry coverage.
 - [x] Alembic is configured with an initial schema migration. Offline SQL generation was verified for PostgreSQL.
 - [x] API v1 routers are registered by `app/api/v1/api.py`.
-- [x] API v1 exposes health, login, password setup, staff onboarding, cohort/track endpoints, public widget options, and public application submission. Application review and messaging endpoints remain unimplemented.
+- [x] API v1 exposes health, login, password setup, staff onboarding, cohort/track endpoints, public widget options/submission, and Admin/Super Admin application listing, detail, approval, and rejection. Messaging endpoints remain unimplemented.
 - [x] Admins and Super Admins can create cohorts with at least one track; each cohort receives a unique embed token, a general conversation, and a conversation for every track in the same transaction.
 - [x] Admins and Super Admins can add tracks with their track conversations. Staff can list all cohorts/tracks; Talents are scoped to their own cohort.
 - [x] Cohort creation rollback, generated conversations, track creation, input validation, and role/listing scope are covered by PostgreSQL integration tests.
@@ -27,11 +27,14 @@ Verified implementation observations:
 - [x] PostgreSQL migration test verifies the fresh schema and head revision, then cleans up its disposable database.
 - [x] Staff creation atomically stores an inactive Profile and email outbox event. Admins can create Mentors; Super Admins can create Admins.
 - [x] Staff setup email is sent by a separate SMTP worker with capped exponential retries. Setup tokens are stored as hashes and are single-use for 24 hours.
+- [x] Admins and Super Admins can filter/list and inspect applications, approve pending applications after intake closes, or reject them. Profile creation, application status transition, and Talent setup outbox event commit atomically; duplicate/concurrent review attempts and existing Profile emails return conflicts.
+- [x] Approved applications create an inactive Talent Profile assigned to the application's cohort and track. The email worker sends a Talent setup link using the existing hashed, single-use 24-hour setup-token flow; completing setup activates the Talent.
+- [x] Application review tests cover Admin authorization, listing filters, detail, post-intake approval, transactional outbox creation, Talent password setup and login, rejection without Profile creation, repeat processing, and existing Profile email conflicts.
 - [x] Active Profile login issues 15-minute JWT access tokens; protected requests reload Profile status and role from PostgreSQL.
 - [ ] No formatter, linter, type checker, or CI workflow is configured.
-- [ ] Application review, Talent onboarding, and the documented application-to-chat lifecycle are not implemented.
+- [ ] Messaging and the complete application-to-chat lifecycle are not implemented.
 
-The checked source and tests prove the cohort/track and public intake workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
+The checked source and tests prove the cohort/track, public intake, and application review/onboarding workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
 
 ## Model/contract comparison findings
 
@@ -59,7 +62,7 @@ The checked source and tests prove the cohort/track and public intake workflows.
 ## Contract decisions confirmed
 
 - Talent Profiles have one cohort and track assignment at a time. A second approval for an existing Profile email conflicts; multi-cohort enrollment is out of MVP scope.
-- Staff onboarding, inactive Profile creation, and a durable email-outbox event are atomic. Email delivery retries independently. Applying this to Talent application approval remains future work.
+- Staff onboarding and Talent approval both atomically create inactive Profiles and durable email-outbox events. Email delivery retries independently.
 - Staff setup tokens are single-use and expire after 24 hours. Apply the same setup flow to approved Talents with the application lifecycle.
 - Access JWTs expire after 15 minutes; the MVP does not include refresh tokens.
 - Admins/Super Admins can create tracks after cohort creation. Staff may list profiles subject to server-enforced permission scoping.
@@ -74,8 +77,8 @@ The checked source and tests prove the cohort/track and public intake workflows.
 
 ## Recommended next steps
 
-1. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
-2. Implement messaging and end-to-end lifecycle workflows.
+1. Implement messaging discovery, history, and send endpoints with server-side role and cohort/track authorization.
+2. Add end-to-end lifecycle coverage: cohort → application → review → password setup → login → messaging.
 3. Add CI and operational checks, then finalize widget hosting and supported-browser decisions.
 
 See [`04-task-breakdown.md`](./04-task-breakdown.md) for the complete checklist and [`docs/work-plan.md`](../docs/work-plan.md) for the original phase plan.

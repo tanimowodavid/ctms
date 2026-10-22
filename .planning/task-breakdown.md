@@ -49,7 +49,7 @@ Use this as the implementation checklist. Items describe intended product work; 
 - [x] Reject inactive accounts from login and apply status checks to protected requests.
 - [x] Implement secure, one-time staff setup tokens and password setup activation.
 - [x] Enforce 24-hour setup-token expiry and single-use consumption for staff setup.
-- [ ] Integrate the durable email outbox with Talent application approval. Staff onboarding uses the outbox and retryable setup-link delivery.
+- [x] Integrate the durable email outbox with Talent application approval. Staff onboarding uses the outbox and retryable setup-link delivery.
 - [x] Enforce 15-minute access JWT expiry; do not add a refresh flow in the MVP.
 - [x] Implement staff onboarding with role restrictions and automatic role tags.
 - [ ] Implement Super Admin-only Admin/Mentor role changes and staff revocation.
@@ -82,13 +82,13 @@ Rate limiting and bot protection are out of scope for this project.
 
 ## 7. Application review and Talent onboarding
 
-- [ ] Implement staff-only Application list/detail and filters.
-- [ ] Implement Admin/Super Admin approval and rejection state transitions.
-- [ ] Atomically create one inactive Talent Profile and approve its Application.
-- [ ] Prevent repeated/concurrent approvals and handle globally duplicated Profile email.
-- [ ] Add an email adapter and development implementation for setup links.
-- [ ] Implement single-use password setup and activation.
-- [ ] Test post-intake review, rejection, duplicates, concurrent approval, and email failures.
+- [x] Implement staff-only Application list/detail and filters.
+- [x] Implement Admin/Super Admin approval and rejection state transitions.
+- [x] Atomically create one inactive Talent Profile and approve its Application.
+- [x] Prevent repeated/concurrent approvals and handle globally duplicated Profile email.
+- [x] Reuse the SMTP outbox worker for Talent setup links, with a Talent-specific email message.
+- [x] Reuse single-use password setup and activation for approved Talents.
+- [x] Test post-intake review, rejection, duplicate-profile conflict, and retryable outbox delivery.
 
 ## 8. Messaging and authorization
 

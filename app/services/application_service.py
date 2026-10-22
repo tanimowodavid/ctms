@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Application, Cohort, Track
+from app.models import Application, Cohort, EmailOutbox, Profile, Track
 from app.schemas.application import PublicApplicationCreate
 
 
@@ -21,6 +21,18 @@ class ApplicationTrackNotFound(Exception):
 
 
 class DuplicateApplication(Exception):
+	pass
+
+
+class ApplicationNotFound(Exception):
+	pass
+
+
+class ApplicationAlreadyProcessed(Exception):
+	pass
+
+
+class ApplicationProfileConflict(Exception):
 	pass
 
 
@@ -71,5 +83,75 @@ def submit_application(session: Session, embed_token: str, data: PublicApplicati
 		if constraint_name == "uq_application_email_cohort_ci" or "uq_application_email_cohort_ci" in str(exc.orig):
 			raise DuplicateApplication from exc
 		raise
+	session.refresh(application)
+	return application
+
+
+def list_applications(
+	session: Session, *, cohort_id: str | None = None, status: str | None = None
+) -> list[Application]:
+	query = select(Application).order_by(Application.created_at.desc(), Application.id)
+	if cohort_id is not None:
+		query = query.where(Application.cohort_id == cohort_id)
+	if status is not None:
+		query = query.where(Application.status == status)
+	return list(session.scalars(query))
+
+
+def get_application(session: Session, application_id: str) -> Application:
+	application = session.get(Application, application_id)
+	if application is None:
+		raise ApplicationNotFound
+	return application
+
+
+def approve_application(session: Session, application_id: str) -> tuple[Application, Profile]:
+	application = session.scalar(select(Application).where(Application.id == application_id).with_for_update())
+	if application is None:
+		raise ApplicationNotFound
+	if application.status != "PENDING":
+		raise ApplicationAlreadyProcessed
+
+	profile_exists = session.scalar(
+		select(Profile.id)
+		.where(func.lower(func.trim(Profile.email)) == application.email)
+		.limit(1)
+	)
+	if profile_exists is not None:
+		raise ApplicationProfileConflict
+
+	profile = Profile(
+		email=application.email.strip().lower(),
+		full_name=application.full_name,
+		role="TALENT",
+		status="INACTIVE",
+		tag="TALENT",
+		cohort_id=application.cohort_id,
+		track_id=application.track_id,
+	)
+	session.add(profile)
+	try:
+		session.flush()
+		application.status = "APPROVED"
+		session.add(EmailOutbox(profile_id=profile.id, event_type="TALENT_PASSWORD_SETUP"))
+		session.commit()
+	except IntegrityError as exc:
+		session.rollback()
+		if "uq_profile_email_normalized" in str(exc.orig) or "uq_profile_email" in str(exc.orig):
+			raise ApplicationProfileConflict from exc
+		raise
+	session.refresh(application)
+	session.refresh(profile)
+	return application, profile
+
+
+def reject_application(session: Session, application_id: str) -> Application:
+	application = session.scalar(select(Application).where(Application.id == application_id).with_for_update())
+	if application is None:
+		raise ApplicationNotFound
+	if application.status != "PENDING":
+		raise ApplicationAlreadyProcessed
+	application.status = "REJECTED"
+	session.commit()
 	session.refresh(application)
 	return application

@@ -21,12 +21,13 @@ def _setup_url(token: str) -> str:
 
 def send_staff_setup_email(profile: Profile, setup_url: str) -> None:
 	message = EmailMessage()
+	account_kind = "talent" if profile.role == "TALENT" else profile.role.lower()
 	message["Subject"] = "Complete your CTMS account setup"
 	message["From"] = settings.smtp_from_email
 	message["To"] = profile.email
 	message.set_content(
 		f"Hello {profile.full_name},\n\n"
-		f"Your CTMS {profile.role.lower()} account has been created. Complete setup within "
+		f"Your CTMS {account_kind} account has been created. Complete setup within "
 		f"{SETUP_TOKEN_EXPIRE_HOURS} hours by opening this link:\n{setup_url}\n\n"
 		"If you were not expecting this invitation, you can ignore this message."
 	)

@@ -199,9 +199,9 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
 - **Method:** `GET`
 - **Path:** `/applications`
 - **Query Parameters:** `cohortId` (optional), `status` (optional, e.g. `PENDING`, `APPROVED`, `REJECTED`)
-- **Description:** Lists application records for staff review. Applicants are not profiles and cannot authenticate. Intake closure does not prevent staff from reviewing pending applications.
+- **Description:** Lists application records for staff review, newest first. Applicants are not profiles and cannot authenticate. Intake closure does not prevent staff from reviewing pending applications.
 - **Responses:**
-  - `200 OK`: Returns matching applications.
+  - `200 OK`: Returns matching records shaped as `{ id, fullName, email, status, cohortId, trackId, createdAt }`.
   - `403 Forbidden`: The user is not an Admin or Super Admin.
 
 ### Get Application (Admin / Super Admin)
@@ -210,7 +210,7 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
 - **Path:** `/applications/{applicationId}`
 - **Description:** Retrieves one application for staff review.
 - **Responses:**
-  - `200 OK`: Returns the application.
+  - `200 OK`: Returns `{ id, fullName, email, status, cohortId, trackId, createdAt }`.
   - `403 Forbidden`: The user is not an Admin or Super Admin.
   - `404 Not Found`: Application not found.
 
@@ -222,7 +222,7 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
 - **Request Body:**
   No request body. The application’s selected track is used.
 - **Responses:**
-  - `201 Created`: Application approved and Talent profile created.
+  - `201 Created`: Returns the created Profile (`id`, `email`, `fullName`, `role`, `status`, `tag`).
   - `403 Forbidden`: The user is not an Admin or Super Admin.
   - `404 Not Found`: Application not found.
   - `409 Conflict`: Application is not pending, or a profile already exists for the email.
@@ -233,7 +233,7 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
 - **Path:** `/applications/{applicationId}/reject`
 - **Description:** Marks a pending application as `REJECTED`. This does not create a user profile. Repeated rejection or rejection of an already processed application is rejected.
 - **Responses:**
-  - `200 OK`: Application rejected.
+  - `200 OK`: Returns the updated Application (`id`, `fullName`, `email`, `status`, `cohortId`, `trackId`, `createdAt`).
   - `403 Forbidden`: The user is not an Admin or Super Admin.
   - `404 Not Found`: Application not found.
   - `409 Conflict`: Application is not pending.
