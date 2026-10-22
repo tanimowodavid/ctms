@@ -4,7 +4,7 @@ Last reviewed: 2026-10-22
 
 ## Current state
 
-The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, and a complete initial staff onboarding flow. Cohort, application, Talent lifecycle, and messaging workflows remain largely unimplemented.
+The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, complete initial staff onboarding, and cohort/track creation and listing. Public application intake, application review/Talent lifecycle, and messaging workflows remain unimplemented.
 
 Verified implementation observations:
 
@@ -14,7 +14,10 @@ Verified implementation observations:
 - [x] Pytest suite uses dedicated PostgreSQL test databases; ten tests pass, including fresh-database migration, staff onboarding, auth, and email-worker retry coverage.
 - [x] Alembic is configured with an initial schema migration. Offline SQL generation was verified for PostgreSQL.
 - [x] API v1 routers are registered by `app/api/v1/api.py`.
-- [x] API v1 exposes health, login, password setup, and staff onboarding endpoints. Other product endpoints are not yet implemented.
+- [x] API v1 exposes health, login, password setup, staff onboarding, and cohort/track endpoints. Public application, review, and messaging endpoints remain unimplemented.
+- [x] Admins and Super Admins can create cohorts with at least one track; each cohort receives a unique embed token, a general conversation, and a conversation for every track in the same transaction.
+- [x] Admins and Super Admins can add tracks with their track conversations. Staff can list all cohorts/tracks; Talents are scoped to their own cohort.
+- [x] Cohort creation rollback, generated conversations, track creation, input validation, and role/listing scope are covered by PostgreSQL integration tests.
 - [x] Initial schema and staff-onboarding migrations verified against a fresh PostgreSQL 16 test database. The app database is migrated to the same head revision.
 - [x] Dockerfile defines the API image; Docker Compose defines PostgreSQL 16 with a persistent volume and health check. Compose startup and migration were verified locally.
 - [x] One-time Super Admin CLI refuses a second bootstrap and serializes concurrent bootstrap attempts with a PostgreSQL advisory lock.
@@ -25,7 +28,7 @@ Verified implementation observations:
 - [ ] No formatter, linter, type checker, or CI workflow is configured.
 - [ ] Public widget and the documented application-to-chat lifecycle are not implemented.
 
-The checked source also proves the staff onboarding API, login and setup-password flows, and asynchronous setup-email delivery. Other model/service/schema modules are not evidence that their intended business workflows are complete.
+The checked source and tests also prove the cohort and track creation/listing workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
 
 ## Model/contract comparison findings
 
@@ -34,6 +37,7 @@ The checked source also proves the staff onboarding API, login and setup-passwor
 - Application and Profile now use composite foreign keys to ensure the selected Track belongs to the referenced Cohort.
 - Password setup tokens and the durable email outbox are persisted in their own tables.
 - The API contract says cohort creation is Admin/Super Admin; post-creation track creation is now recorded with the same role rule.
+- Cohort/track creation and listing routes follow those role and Talent cohort-scope rules. Cohort setup creates its token and Conversations transactionally.
 
 ## Documentation completed
 
@@ -66,10 +70,9 @@ The checked source also proves the staff onboarding API, login and setup-passwor
 
 ## Recommended next steps
 
-1. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
-2. Implement cohort and track creation, including generated embed tokens and the required general/track Conversations.
-3. Implement public application intake with normalized email, cohort/track validation, duplicate protection, and the intake cutoff.
-4. Complete the widget, messaging, and end-to-end lifecycle, then add CI and operational checks.
+1. Implement public application intake with normalized email, cohort/track validation, duplicate protection, and the intake cutoff.
+2. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
+3. Complete the widget and messaging workflows, then add CI and operational checks.
 
 See [`04-task-breakdown.md`](./04-task-breakdown.md) for the complete checklist and [`docs/work-plan.md`](../docs/work-plan.md) for the original phase plan.
 

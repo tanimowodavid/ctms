@@ -59,13 +59,13 @@ Use this as the implementation checklist. Items describe intended product work; 
 
 ## 5. Cohorts and tracks
 
-- [ ] Implement atomic cohort creation with at least one valid track.
-- [ ] Generate unique public embed token.
-- [ ] Create one general Conversation per Cohort and one track Conversation per Track.
-- [ ] Implement role-scoped cohort and track listing.
-- [ ] Implement post-creation track creation and its Conversation.
+- [x] Implement atomic cohort creation with at least one valid track.
+- [x] Generate unique public embed token.
+- [x] Create one general Conversation per Cohort and one track Conversation per Track.
+- [x] Implement role-scoped cohort and track listing.
+- [x] Implement post-creation track creation and its Conversation.
 - [ ] Apply UTC cohort-start intake boundary consistently (`now >= startDate` is closed).
-- [ ] Test transactional rollback, track ownership, unique conversations, and role scoping.
+- [x] Test transactional rollback, track ownership, unique conversations, and role scoping.
 
 ## 6. Public application intake and widget
 
