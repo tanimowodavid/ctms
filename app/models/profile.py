@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, String, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -24,6 +24,7 @@ class Profile(Base):
 			name="fk_profile_track_cohort",
 		),
 		UniqueConstraint("email", name="uq_profile_email"),
+		Index("uq_profile_email_normalized", text("lower(trim(email))"), unique=True),
 		CheckConstraint(
 			"role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'TALENT')",
 			name="ck_profile_role",

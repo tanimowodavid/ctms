@@ -4,32 +4,35 @@ Last reviewed: 2026-10-22
 
 ## Current state
 
-The repository is at an early backend scaffold stage. Product, ERD, API, and work-plan documentation exist in `docs/`; API v1 routing is wired, with the versioned health route verified. The application package contains model/schema/service/endpoint module files, but most product API behavior described in the contract is not yet implemented.
+The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, and a complete initial staff onboarding flow. Cohort, application, Talent lifecycle, and messaging workflows remain largely unimplemented.
 
 Verified implementation observations:
 
 - [x] FastAPI app exposes `GET /api/v1/health` returning `{"status":"ok"}`.
 - [x] Python package and core modules exist for configuration, database setup, security, models, schemas, services, and endpoint modules.
 - [x] `uv` project metadata and lockfile are present; the project requires Python 3.12+.
-- [x] Pytest baseline exists; five tests pass, including database constraint tests against SQLite.
+- [x] Pytest suite uses dedicated PostgreSQL test databases; ten tests pass, including fresh-database migration, staff onboarding, auth, and email-worker retry coverage.
 - [x] Alembic is configured with an initial schema migration. Offline SQL generation was verified for PostgreSQL.
 - [x] API v1 routers are registered by `app/api/v1/api.py`.
-- [ ] Product API endpoints beyond health are not implemented.
-- [x] Initial migration applied successfully to a fresh local PostgreSQL 16 database. An opt-in PostgreSQL migration test checks its tables and revision, then downgrades the disposable test database.
+- [x] API v1 exposes health, login, password setup, and staff onboarding endpoints. Other product endpoints are not yet implemented.
+- [x] Initial schema and staff-onboarding migrations verified against a fresh PostgreSQL 16 test database. The app database is migrated to the same head revision.
 - [x] Dockerfile defines the API image; Docker Compose defines PostgreSQL 16 with a persistent volume and health check. Compose startup and migration were verified locally.
 - [x] One-time Super Admin CLI refuses a second bootstrap and serializes concurrent bootstrap attempts with a PostgreSQL advisory lock.
-- [x] Opt-in PostgreSQL migration test verifies the fresh schema and revision, then downgrades the disposable test database.
+- [x] PostgreSQL migration test verifies the fresh schema and head revision, then cleans up its disposable database.
+- [x] Staff creation atomically stores an inactive Profile and email outbox event. Admins can create Mentors; Super Admins can create Admins.
+- [x] Staff setup email is sent by a separate SMTP worker with capped exponential retries. Setup tokens are stored as hashes and are single-use for 24 hours.
+- [x] Active Profile login issues 15-minute JWT access tokens; protected requests reload Profile status and role from PostgreSQL.
 - [ ] No formatter, linter, type checker, or CI workflow is configured.
-- [ ] Public widget, email integration, and the documented application-to-chat lifecycle are not implemented.
+- [ ] Public widget and the documented application-to-chat lifecycle are not implemented.
 
-The checked source currently proves the versioned health endpoint as a working HTTP behavior. Presence of model/service/schema module files is not evidence that their intended business workflows are complete.
+The checked source also proves the staff onboarding API, login and setup-password flows, and asynchronous setup-email delivery. Other model/service/schema modules are not evidence that their intended business workflows are complete.
 
 ## Model/contract comparison findings
 
 - Application and Profile models have several useful status/role checks, and Conversation models enforce the general-vs-track target shape and uniqueness per cohort/track.
 - Application uniqueness is now enforced by a unique index on trimmed, lowercased email plus cohort. The intake service must still normalize the value before persistence when implemented.
 - Application and Profile now use composite foreign keys to ensure the selected Track belongs to the referenced Cohort.
-- The models do not yet include setup-token or email-outbox persistence.
+- Password setup tokens and the durable email outbox are persisted in their own tables.
 - The API contract says cohort creation is Admin/Super Admin; post-creation track creation is now recorded with the same role rule.
 
 ## Documentation completed
@@ -48,8 +51,8 @@ The checked source currently proves the versioned health endpoint as a working H
 ## Contract decisions confirmed
 
 - Talent Profiles have one cohort and track assignment at a time. A second approval for an existing Profile email conflicts; multi-cohort enrollment is out of MVP scope.
-- Approval, inactive Profile creation, and a durable email-outbox event are atomic. Email delivery retries independently.
-- Talent and onboarded Staff setup tokens are single-use and expire after 24 hours.
+- Staff onboarding, inactive Profile creation, and a durable email-outbox event are atomic. Email delivery retries independently. Applying this to Talent application approval remains future work.
+- Staff setup tokens are single-use and expire after 24 hours. Apply the same setup flow to approved Talents with the application lifecycle.
 - Access JWTs expire after 15 minutes; the MVP does not include refresh tokens.
 - Admins/Super Admins can create tracks after cohort creation. Staff may list profiles subject to server-enforced permission scoping.
 - Bootstrap the first Super Admin through a one-time CLI command that refuses to run if one already exists; do not expose a public bootstrap endpoint.
@@ -57,17 +60,16 @@ The checked source currently proves the versioned health endpoint as a working H
 
 ## Remaining contract decisions
 
-- Production email provider and retry/operations configuration.
 - Widget hosting, embed snippet, CORS/origin rules, and supported browsers.
 - Deployment/CI provider, consistent error envelope, and complete list/pagination schemas.
 - Detailed per-role filter/result scoping for profile listing.
 
 ## Recommended next steps
 
-1. Normalize application email in the intake service.
-2. Implement shared request/authorization behavior.
-3. Deliver authentication and cohort/application lifecycle before messaging.
-4. Add the widget and complete integration/release checks.
+1. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
+2. Implement cohort and track creation, including generated embed tokens and the required general/track Conversations.
+3. Implement public application intake with normalized email, cohort/track validation, duplicate protection, and the intake cutoff.
+4. Complete the widget, messaging, and end-to-end lifecycle, then add CI and operational checks.
 
 See [`04-task-breakdown.md`](./04-task-breakdown.md) for the complete checklist and [`docs/work-plan.md`](../docs/work-plan.md) for the original phase plan.
 

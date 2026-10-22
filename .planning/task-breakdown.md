@@ -19,7 +19,7 @@ Use this as the implementation checklist. Items describe intended product work; 
 - [x] Complete Dockerfile and Docker Compose with PostgreSQL health checks and persistent local database storage.
 - [ ] Add CI to install from the `uv` lockfile and run tests and quality checks.
 - [ ] Select and configure formatter/linter/type-checking tools; document exact commands.
-- [ ] Document database, environment, migration, test, and development workflows.
+- [x] Document database, environment, migration, PostgreSQL test, and development workflows.
 - [ ] Add health and readiness behavior suitable for local and deployed use.
 - [ ] Verify clean-checkout setup and application startup.
 
@@ -37,26 +37,25 @@ Use this as the implementation checklist. Items describe intended product work; 
 
 - [x] Wire API v1 routers into the FastAPI application.
 - [ ] Define request and response Pydantic schemas for every endpoint.
-- [ ] Implement database session lifecycle and consistent exception/error responses.
-- [ ] Add reusable current-user and role/resource authorization dependencies.
+- [x] Implement database session lifecycle and current-user/role authorization dependencies for the delivered auth and staff onboarding routes. Consistent exception/error responses remain pending.
 - [ ] Add structured logging that excludes passwords, tokens, and other secrets.
 - [ ] Define pagination validation and list response conventions.
 - [ ] Compare generated OpenAPI output with the API contract.
 
 ## 4. Authentication and profile lifecycle
 
-- [ ] Implement password hashing and verification using the selected safe configuration.
-- [ ] Implement login and signed access-token creation/validation.
-- [ ] Reject inactive accounts from login and apply status checks to protected requests.
-- [ ] Implement secure, one-time Talent setup tokens and password setup activation.
-- [ ] Enforce 24-hour setup-token expiry and single-use consumption.
-- [ ] Implement the durable email outbox and retryable setup-link delivery without rolling back approval on provider failure.
-- [ ] Enforce 15-minute access JWT expiry; do not add a refresh flow in the MVP.
-- [ ] Implement staff onboarding with role restrictions and automatic role tags.
+- [x] Implement password hashing and verification using the selected safe configuration.
+- [x] Implement login and signed access-token creation/validation.
+- [x] Reject inactive accounts from login and apply status checks to protected requests.
+- [x] Implement secure, one-time staff setup tokens and password setup activation.
+- [x] Enforce 24-hour setup-token expiry and single-use consumption for staff setup.
+- [ ] Integrate the durable email outbox with Talent application approval. Staff onboarding uses the outbox and retryable setup-link delivery.
+- [x] Enforce 15-minute access JWT expiry; do not add a refresh flow in the MVP.
+- [x] Implement staff onboarding with role restrictions and automatic role tags.
 - [ ] Implement Super Admin-only Admin/Mentor role changes and staff revocation.
 - [ ] Implement Admin/Super Admin Talent suspension and restoration.
 - [x] Implement documented Super Admin bootstrap mechanism.
-- [ ] Test applicant, inactive, active, and suspended authentication/authorization behavior.
+- [ ] Test applicant and suspended Talent authentication/authorization behavior. Active/inactive staff login and role authorization are covered.
 
 ## 5. Cohorts and tracks
 

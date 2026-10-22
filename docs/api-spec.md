@@ -234,7 +234,7 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
 
 - **Method:** `POST`
 - **Path:** `/profiles/staff`
-- **Description:** Provisions a new inactive Admin or Mentor account. Admins can create Mentors; Super Admins can create Admins. A one-time password-setup email is queued; the profile becomes active after successful setup.
+  - **Description:** Provisions a new inactive Admin or Mentor account. Admins can create Mentors; Super Admins can create Admins. Requires a valid active user's Bearer access token. A one-time password-setup email is queued; the profile becomes active after successful setup.
 - **Request Body:**
   ```json
   {
@@ -245,8 +245,21 @@ The initial Super Admin is created through a one-time CLI bootstrap that refuses
   }
   ```
 - **Responses:**
-  - `201 Created`: Staff member created.
-  - The profile tag is assigned automatically from the role and is not supplied by the caller.
+    - `201 Created`: Staff member created and setup email queued.
+      ```json
+      {
+        "id": "e7b07384-d113-4ec6-a579-24d1a58c0c11",
+        "email": "smith@talentflow.internal",
+        "fullName": "Dr. Smith",
+        "role": "MENTOR",
+        "status": "INACTIVE",
+        "tag": "MENTOR"
+      }
+      ```
+    - `401 Unauthorized`: Missing, invalid, expired, or inactive account token.
+    - `403 Forbidden`: The actor cannot create the requested role.
+    - `409 Conflict`: A profile with the email already exists.
+    - The profile tag is assigned automatically from the role and is not supplied by the caller. SMTP delivery occurs asynchronously; failed deliveries are retried by the email worker.
 
 ### Change Staff Role or Revoke Staff Access (Super Admin)
 

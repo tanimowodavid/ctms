@@ -5,17 +5,41 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-tms}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-local-password}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-databases.sql:/docker-entrypoint-initdb.d/10-test-databases.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 5s
+
+  email-worker:
+    build: .
+    command: ["uv", "run", "--no-sync", "python", "-m", "app.worker"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${WORKER_DATABASE_URL:-postgresql+psycopg2://postgres:change-this-local-password@db:5432/tms}
+      JWT_SECRET: ${JWT_SECRET:-CHANGE_ME_TO_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS}
+      SETUP_LINK_BASE_URL: ${SETUP_LINK_BASE_URL:-http://localhost:3000/setup-password}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-your-account@gmail.com}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-your-gmail-app-password}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-your-account@gmail.com}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+      SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-20}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-5}
+      WORKER_RETRY_BASE_SECONDS: ${WORKER_RETRY_BASE_SECONDS:-30}
+      WORKER_RETRY_MAX_SECONDS: ${WORKER_RETRY_MAX_SECONDS:-3600}
 
 volumes:
   postgres_data:

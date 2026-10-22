@@ -24,6 +24,13 @@ def test_initial_migration_applies_to_fresh_postgresql_database() -> None:
 	migrated = False
 	try:
 		inspector = inspect(engine)
+		if inspector.get_table_names() == ["alembic_version"]:
+			with engine.begin() as connection:
+				version_count = connection.scalar(text("SELECT count(*) FROM alembic_version"))
+			if version_count == 0:
+				with engine.begin() as connection:
+					connection.exec_driver_sql("DROP TABLE alembic_version")
+		inspector = inspect(engine)
 		assert inspector.get_table_names() == [], "migration test database must be empty"
 
 		os.environ["DATABASE_URL"] = database_url
@@ -32,13 +39,16 @@ def test_initial_migration_applies_to_fresh_postgresql_database() -> None:
 
 		inspector = inspect(engine)
 		assert set(inspector.get_table_names()) == {
-			"alembic_version", "application", "cohort", "conversation", "message", "profile", "track"
+			"alembic_version", "application", "cohort", "conversation", "email_outbox", "message",
+			"password_setup_token", "profile", "track"
 		}
 		with engine.connect() as connection:
-			assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0001_initial"
+			assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0002_staff_onboarding"
 	finally:
 		if migrated:
 			command.downgrade(config, "base")
+			with engine.begin() as connection:
+				connection.exec_driver_sql("DROP TABLE IF EXISTS alembic_version")
 		if previous_database_url is None:
 			os.environ.pop("DATABASE_URL", None)
 		else:
