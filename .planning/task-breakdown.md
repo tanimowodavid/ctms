@@ -10,7 +10,7 @@ Use this as the implementation checklist. Items describe intended product work; 
 - [x] Specify MVP JWT policy: 15-minute access tokens, no refresh-token flow.
 - [x] Specify setup-token policy: single-use, 24-hour expiry.
 - [x] Specify email failure policy: persist approval/Profile/outbox atomically and retry delivery independently.
-- [ ] Specify widget hosting, embed snippet, allowed origins/CORS, and browser support.
+- [ ] Specify widget hosting and browser support. CORS uses the configured exact-origin allowlist.
 - [ ] Specify consistent error response format and list response schemas/pagination limits.
 - [x] Clarify post-creation track creation (Admin/Super Admin), profile listing (Staff with server-enforced scoping), and cohort creation (Admin/Super Admin).
 
@@ -30,7 +30,7 @@ Use this as the implementation checklist. Items describe intended product work; 
 - [x] Add foreign keys and uniqueness for Profile email, cohort/embed token, case/space-insensitive cohort/Application email, and unique general/track Conversations.
 - [x] Ensure every Application/Profile Track belongs to its Cohort through composite foreign keys.
 - [x] Enforce valid role, status, and Conversation type/relationship invariants.
-- [ ] Normalize email at the application intake boundary before persistence; the database already rejects case/space-insensitive duplicates.
+- [x] Normalize email at the application intake boundary before persistence; the database rejects case/space-insensitive duplicates.
 - [x] Add a PostgreSQL migration test, one-time Super Admin bootstrap CLI, and verify the initial migration on a fresh local PostgreSQL database.
 
 ## 3. API foundation
@@ -64,19 +64,21 @@ Use this as the implementation checklist. Items describe intended product work; 
 - [x] Create one general Conversation per Cohort and one track Conversation per Track.
 - [x] Implement role-scoped cohort and track listing.
 - [x] Implement post-creation track creation and its Conversation.
-- [ ] Apply UTC cohort-start intake boundary consistently (`now >= startDate` is closed).
+- [x] Apply UTC cohort-start intake boundary consistently (`now >= startDate` is closed).
 - [x] Test transactional rollback, track ownership, unique conversations, and role scoping.
 
 ## 6. Public application intake and widget
 
-- [ ] Implement widget-token lookup and public submission endpoint.
-- [ ] Validate full name, email, and track; normalize email.
-- [ ] Enforce track/cohort relationship, case-insensitive cohort duplicate prevention, and start-time cutoff.
-- [ ] Handle concurrent duplicate submissions with database constraints and a conflict response.
-- [ ] Build the standalone application form and embeddable JavaScript loader.
-- [ ] Implement loading, success, validation, duplicate, closed-intake, and network-error states.
-- [ ] Configure safe CORS/origin behavior, request size limits, and rate limiting.
-- [ ] Document widget installation and public-token limitations.
+- [x] Implement widget-token lookup and public submission endpoint.
+- [x] Validate full name, email, and track; normalize email.
+- [x] Enforce track/cohort relationship, case-insensitive cohort duplicate prevention, and start-time cutoff.
+- [x] Handle concurrent duplicate submissions with database constraints and a conflict response.
+- [x] Build the standalone application form and embeddable JavaScript loader.
+- [x] Implement loading, success, validation, duplicate, closed-intake, and network-error states.
+- [x] Configure CORS with an exact origin allowlist; request-size limits remain unconfigured.
+- [x] Document widget installation and public-token limitations.
+
+Rate limiting and bot protection are out of scope for this project.
 
 ## 7. Application review and Talent onboarding
 

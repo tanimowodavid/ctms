@@ -10,6 +10,8 @@ This document outlines the RESTful API endpoints for the **TMS** platform, built
 https://api.tms.internal/api/v1
 ```
 
+The separately hosted application widget makes browser requests to this API. Configure the API's `CORS_ALLOWED_ORIGINS` environment variable with the exact widget site origin(s), comma-separated. CORS credentials are disabled and wildcard origins are not used. See [the widget setup guide](application-widget.md).
+
 ---
 
 ## Authentication & Authorization Headers
@@ -54,6 +56,12 @@ Access tokens expire after 15 minutes. The MVP does not provide a refresh-token 
   - `400 Bad Request`: Invalid request or a track that does not belong to the cohort.
   - `404 Not Found`: Invalid cohort embed token.
   - `409 Conflict`: An application already exists for this email in the cohort, or the cohort has started and intake is closed.
+
+### Load Public Application Options
+
+- **Method:** `GET`
+- **Path:** `/cohorts/{embedToken}/application-tracks`
+- **Description:** Returns the public cohort name, start date, intake-open flag, and tracks used to populate the application widget. An unknown token returns `404`.
 
 ---
 

@@ -4,20 +4,23 @@ Last reviewed: 2026-10-22
 
 ## Current state
 
-The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, complete initial staff onboarding, and cohort/track creation and listing. Public application intake, application review/Talent lifecycle, and messaging workflows remain unimplemented.
+The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, staff onboarding, cohort/track management, and public application intake with a standalone widget. Application review/Talent lifecycle and messaging workflows remain unimplemented.
 
 Verified implementation observations:
 
 - [x] FastAPI app exposes `GET /api/v1/health` returning `{"status":"ok"}`.
 - [x] Python package and core modules exist for configuration, database setup, security, models, schemas, services, and endpoint modules.
 - [x] `uv` project metadata and lockfile are present; the project requires Python 3.12+.
-- [x] Pytest suite uses dedicated PostgreSQL test databases; ten tests pass, including fresh-database migration, staff onboarding, auth, and email-worker retry coverage.
+- [x] Pytest suite uses dedicated PostgreSQL test databases; sixteen tests pass, including fresh-database migration, staff onboarding, cohort management, public application intake/CORS, and email-worker retry coverage.
 - [x] Alembic is configured with an initial schema migration. Offline SQL generation was verified for PostgreSQL.
 - [x] API v1 routers are registered by `app/api/v1/api.py`.
-- [x] API v1 exposes health, login, password setup, staff onboarding, and cohort/track endpoints. Public application, review, and messaging endpoints remain unimplemented.
+- [x] API v1 exposes health, login, password setup, staff onboarding, cohort/track endpoints, public widget options, and public application submission. Application review and messaging endpoints remain unimplemented.
 - [x] Admins and Super Admins can create cohorts with at least one track; each cohort receives a unique embed token, a general conversation, and a conversation for every track in the same transaction.
 - [x] Admins and Super Admins can add tracks with their track conversations. Staff can list all cohorts/tracks; Talents are scoped to their own cohort.
 - [x] Cohort creation rollback, generated conversations, track creation, input validation, and role/listing scope are covered by PostgreSQL integration tests.
+- [x] Public intake validates the embed token, cohort-owned track, normalized name/email, duplicate applications, and UTC start-time cutoff. The normalized-email database index handles concurrent submissions.
+- [x] The standalone HTML/JavaScript application form and iframe loader fetch public track options and display loading, success, validation, duplicate, closed-intake, and network-error states.
+- [x] CORS uses an exact origin allowlist from `CORS_ALLOWED_ORIGINS`; wildcard origins and credentialed requests are rejected. Intake concurrency and allowed/blocked CORS preflights are covered by integration tests.
 - [x] Initial schema and staff-onboarding migrations verified against a fresh PostgreSQL 16 test database. The app database is migrated to the same head revision.
 - [x] Dockerfile defines the API image; Docker Compose defines PostgreSQL 16 with a persistent volume and health check. Compose startup and migration were verified locally.
 - [x] One-time Super Admin CLI refuses a second bootstrap and serializes concurrent bootstrap attempts with a PostgreSQL advisory lock.
@@ -26,18 +29,19 @@ Verified implementation observations:
 - [x] Staff setup email is sent by a separate SMTP worker with capped exponential retries. Setup tokens are stored as hashes and are single-use for 24 hours.
 - [x] Active Profile login issues 15-minute JWT access tokens; protected requests reload Profile status and role from PostgreSQL.
 - [ ] No formatter, linter, type checker, or CI workflow is configured.
-- [ ] Public widget and the documented application-to-chat lifecycle are not implemented.
+- [ ] Application review, Talent onboarding, and the documented application-to-chat lifecycle are not implemented.
 
-The checked source and tests also prove the cohort and track creation/listing workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
+The checked source and tests prove the cohort/track and public intake workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
 
 ## Model/contract comparison findings
 
 - Application and Profile models have several useful status/role checks, and Conversation models enforce the general-vs-track target shape and uniqueness per cohort/track.
-- Application uniqueness is now enforced by a unique index on trimmed, lowercased email plus cohort. The intake service must still normalize the value before persistence when implemented.
+- Application uniqueness is enforced by a unique index on trimmed, lowercased email plus cohort; the intake service normalizes email before persistence and maps concurrent conflicts to `409`.
 - Application and Profile now use composite foreign keys to ensure the selected Track belongs to the referenced Cohort.
 - Password setup tokens and the durable email outbox are persisted in their own tables.
 - The API contract says cohort creation is Admin/Super Admin; post-creation track creation is now recorded with the same role rule.
 - Cohort/track creation and listing routes follow those role and Talent cohort-scope rules. Cohort setup creates its token and Conversations transactionally.
+- Public application options and submissions use the embed token; submissions are normalized, cohort/track-validated, cutoff-checked, and duplicate-protected. Widget CORS is configured with exact deployment origins via `CORS_ALLOWED_ORIGINS`.
 
 ## Documentation completed
 
@@ -64,15 +68,15 @@ The checked source and tests also prove the cohort and track creation/listing wo
 
 ## Remaining contract decisions
 
-- Widget hosting, embed snippet, CORS/origin rules, and supported browsers.
+- Widget hosting location and supported browsers. CORS origin allowlisting is configurable through `CORS_ALLOWED_ORIGINS`.
 - Deployment/CI provider, consistent error envelope, and complete list/pagination schemas.
 - Detailed per-role filter/result scoping for profile listing.
 
 ## Recommended next steps
 
-1. Implement public application intake with normalized email, cohort/track validation, duplicate protection, and the intake cutoff.
-2. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
-3. Complete the widget and messaging workflows, then add CI and operational checks.
+1. Implement the Talent application approval and rejection workflow, using the existing JWT/role checks and transactional email outbox for one-time Talent setup.
+2. Implement messaging and end-to-end lifecycle workflows.
+3. Add CI and operational checks, then finalize widget hosting and supported-browser decisions.
 
 See [`04-task-breakdown.md`](./04-task-breakdown.md) for the complete checklist and [`docs/work-plan.md`](../docs/work-plan.md) for the original phase plan.
 
