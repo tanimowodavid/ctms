@@ -36,7 +36,20 @@ Apply database migrations after configuring `DATABASE_URL` and starting PostgreS
 uv run alembic upgrade head
 ```
 
-The health endpoint is `GET http://127.0.0.1:8000/health`; it returns:
+Bootstrap the first Super Admin once, after migration. The command prompts securely for credentials and refuses to create another Super Admin if one already exists:
+
+```sh
+uv run python -m app.cli bootstrap-super-admin
+```
+
+The PostgreSQL migration integration test runs against a dedicated, empty database. It upgrades to head, checks the schema and revision, then downgrades to base:
+
+```powershell
+$env:CTMS_MIGRATION_TEST_DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/tms_test"
+uv run pytest tests/test_migrations.py
+```
+
+The health endpoint is `GET http://127.0.0.1:8000/api/v1/health`; it returns:
 
 ```json
 { "status": "ok" }
@@ -44,7 +57,14 @@ The health endpoint is `GET http://127.0.0.1:8000/health`; it returns:
 
 ## Docker
 
-The project is intended to run using Docker, but Docker configuration and setup are not yet complete. Use the local instructions above for now.
+Start local PostgreSQL with Docker Compose, then apply migrations:
+
+```sh
+docker compose up -d db
+uv run alembic upgrade head
+```
+
+Compose publishes PostgreSQL on port 5432, stores its data in the `postgres_data` volume, and waits for `pg_isready` before reporting the database healthy. Set `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_PORT` in `.env` to override local defaults. Build the API image separately with `docker build -t ctms .`.
 
 ## Project Docs
 
@@ -58,55 +78,18 @@ The project is intended to run using Docker, but Docker configuration and setup 
 ```text
 CTMS/
 ├── app/
-│   ├── api/                      # Presentation Layer (FastAPI Routers)
-│   │   ├── v1/
-│   │   │   ├── api.py            # Router aggregator (includes all routers)
-│   │   │   └── endpoints/
-│   │   │       ├── auth.py         # Login & JWT token management
-│   │   │       ├── cohorts.py      # Cohorts, tracks, & widget apply route
-│   │   │       ├── profiles.py     # Staff management & applicant approval
-│   │   │       └── messages.py     # Normalized conversations & chat messages
-│   │   └── deps.py               # FastAPI Dependencies (e.g., get_current_user, get_db)
-│   │
-│   ├── core/                     # Infrastructure & Configuration
-│   │   ├── config.py             # Environment variables (Pydantic Settings)
-│   │   ├── database.py           # SQLAlchemy engine & session setup
-│   │   └── security.py           # Password hashing (Bcrypt) & JWT utils
-│   │
-│   ├── models/                   # Database ORM Models (SQLAlchemy Tables)
-│   │   ├── cohort.py
-│   │   ├── track.py
-│   │   ├── application.py        # Dedicated table for public widget leads
-│   │   ├── profile.py            # Authenticated users (Admins, Mentors, Talents)
-│   │   └── messaging.py          # Conversation & Message models
-│   │
-│   ├── schemas/                  # Pydantic Validation Schemas (DTOs)
-│   │   ├── cohort.py
-│   │   ├── application.py
-│   │   ├── profile.py
-│   │   └── messaging.py
-│   │
-│   ├── services/                 # Business Logic Layer
-│   │   ├── auth_service.py
-│   │   ├── profile_service.py
-│   │   └── chat_service.py
-│   │
-│   └── main.py                   # FastAPI app initialization, CORS middleware, routers
-│
-├── alembic/                      # Alembic configuration and migration history
-├── docs/                         # Week 1 Documentation Deliverables
-│   ├── idea-one-pager.md         # Problem, target user, core flow, scope, risks
-│   ├── work-plan.md              # 3-week execution plan and timeline
-│   ├── erd.md                    # Database ERD (Mermaid format)
-│   └── api-spec.md               # Comprehensive REST API specifications
-│
-├── tests/                        # Pytest unit & integration tests
-│   ├── conftest.py               # Shared SQLite test database fixtures
-│   └── test_model_constraints.py # Database invariant tests
-│
-├── .env.example                  # Environment variable template
-├── .gitignore                    # Ignored files (venv, __pycache__, .env)
-├── pyproject.toml                # Managed via uv (dependencies and metadata)
-├── uv.lock                       # uv lock file
-└── README.md                     # Project overview, setup instructions, & run guide
+│   ├── api/                      # HTTP routers and request dependencies
+│   ├── core/                     # Configuration, database, and security
+│   ├── models/                   # SQLAlchemy persistence models
+│   ├── schemas/                  # Request and response validation
+│   ├── services/                 # Business workflows
+│   ├── cli.py                    # Operator commands such as first-admin setup
+│   └── main.py                   # FastAPI application
+├── alembic/                      # Database migration history
+├── docs/                         # Product and API references
+├── tests/                        # Automated tests
+├── docker-compose.yml            # Local PostgreSQL service
+├── Dockerfile                    # API image
+├── pyproject.toml                # Dependencies and project configuration
+└── README.md
 ```
