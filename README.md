@@ -1,18 +1,30 @@
 # CTMS
 
-CTMS is a cohort and talent management system for organising talents into cohorts and tracks.
+CTMS helps a training program manage cohorts, tracks, applications, and participant conversations. Staff create cohorts and review applications; approved Talents set up their accounts and can chat in their cohort’s general conversation and assigned track conversation.
 
-## Tech Stack
+The project is a FastAPI backend with a small public application form that can be hosted separately and embedded on another site.
 
-- Python 3.12+
-- FastAPI
-- SQLAlchemy with PostgreSQL (`psycopg2`)
-- Pydantic Settings
-- Alembic, available for database migrations
+## Project notes
 
-## Run Locally
+- [API specification](docs/api-spec.md)
+- [Data model](docs/ERD.md)
+- [Application widget setup](docs/application-widget.md)
+- [Project overview](docs/idea-one-pager.md)
+- [Work plan](docs/work-plan.md)
 
-Copy the example environment file, install dependencies, start PostgreSQL, and apply migrations:
+The code is organized by responsibility: HTTP routes live in `app/api`, validation schemas in `app/schemas`, business workflows in `app/services`, and database models in `app/models`.
+
+## What’s included
+
+- Staff login, onboarding, and one-time password setup links.
+- Cohort and track management, with a public application widget.
+- Admin and Super Admin application review and Talent onboarding.
+- Conversation discovery, message history, and messaging permissions for Staff and Talents.
+- PostgreSQL persistence, Alembic migrations, and an email outbox worker.
+
+## Run it locally
+
+You’ll need Python 3.12+, [`uv`](https://docs.astral.sh/uv/), and Docker Compose. From the repository root, create your local environment, install dependencies, start PostgreSQL, and apply the schema:
 
 ```powershell
 Copy-Item .env.example .env
@@ -21,128 +33,70 @@ docker compose up -d db
 uv run alembic upgrade head
 ```
 
-Set `CORS_ALLOWED_ORIGINS` in `.env` to the origin where you will serve the widget. For the local preview below, use:
+The example settings are for local development. Keep `.env` private and replace the JWT secret before using the API beyond local work. Start the API with:
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+The API listens at `http://localhost:8000`. Interactive documentation is at `http://localhost:8000/docs`, and the health check is `GET /api/v1/health`.
+
+The first account must be a Super Admin. Create it once, after applying migrations:
+
+```powershell
+uv run python -m app.cli bootstrap-super-admin
+```
+
+The command prompts for credentials and refuses to create a second Super Admin. Admins and Super Admins can create cohorts and review applications. Mentors and newly approved Talents complete account setup through a one-time email link.
+
+## Try the application form
+
+The widget needs a cohort with at least one track and a future `startDate`. In `/docs`, log in through `POST /api/v1/auth/login`, select **Authorize**, and create a cohort through `POST /api/v1/cohorts`. Copy its `embedToken`.
+
+Allow the local widget origin in `.env` and restart the API so it picks up the setting:
 
 ```dotenv
 CORS_ALLOWED_ORIGINS=http://localhost:8080
 ```
 
-Start the API (restart it after changing `.env`):
+Serve the widget directory in another terminal:
 
-```sh
-uv run uvicorn app.main:app --reload
-```
-
-The API is available at `http://localhost:8000`; interactive API documentation is at `http://localhost:8000/docs`.
-
-## Preview and test the application widget
-
-The widget needs a cohort with a future `startDate` and at least one track. Bootstrap the first Super Admin if needed:
-
-```sh
-uv run python -m app.cli bootstrap-super-admin
-```
-
-In `http://localhost:8000/docs`, sign in with `POST /api/v1/auth/login`, click **Authorize**, and use the returned access token. Create a cohort with `POST /api/v1/cohorts`, a future `startDate`, a later `endDate`, and at least one track. Copy the returned `embedToken`.
-
-Serve the widget files from a second terminal:
-
-```sh
+```powershell
 python -m http.server 8080 --directory widget
 ```
 
-Open the application form, replacing `YOUR_COHORT_TOKEN` with the token from cohort creation:
+Open the form with your cohort token:
 
 ```text
 http://localhost:8080/apply.html?apiBase=http://localhost:8000/api/v1&embedToken=YOUR_COHORT_TOKEN
 ```
 
-Submit a test name, email, and track. A successful submission displays a confirmation; submitting the same email to the cohort again shows the duplicate message. The public widget API requires no login. The CORS allowlist must match the widget's origin exactly; see the [widget setup guide](docs/application-widget.md) for the production embed snippet and deployment notes.
+Applicants do not need an account. The widget token is public intake configuration, not an access credential. For a hosted site, configure the exact widget origin in `CORS_ALLOWED_ORIGINS` and follow the [widget setup guide](docs/application-widget.md) for the embed snippet.
 
-Run the automated tests:
+## Run the tests
 
-```powershell
-docker compose up -d db
-uv run alembic upgrade head
-$env:TEST_DATABASE_URL = "postgresql+psycopg2://postgres:change-this-local-password@localhost:5432/ctms_test"
-$env:CTMS_MIGRATION_TEST_DATABASE_URL = "postgresql+psycopg2://postgres:change-this-local-password@localhost:5432/ctms_migration_test"
-uv run pytest
-```
-
-Apply database migrations after configuring `DATABASE_URL` and starting PostgreSQL:
-
-```sh
-uv run alembic upgrade head
-```
-
-Bootstrap the first Super Admin once, after migration. The command prompts securely for credentials and refuses to create another Super Admin if one already exists:
-
-```sh
-uv run python -m app.cli bootstrap-super-admin
-```
-
-The PostgreSQL migration integration test runs against a dedicated, empty database. It upgrades to head, checks the schema and revision, then downgrades to base. Compose creates both test databases on first initialization of its persistent PostgreSQL volume.
+`.env.example` includes separate PostgreSQL URLs for the application tests and the fresh migration test. Keep both pointed at disposable databases whose names end in `_test`; Compose creates them when it first initializes its database volume.
 
 ```powershell
-$env:CTMS_MIGRATION_TEST_DATABASE_URL = "postgresql+psycopg2://postgres:change-this-local-password@localhost:5432/ctms_migration_test"
-uv run pytest tests/test_migrations.py
+uv run pytest -q
 ```
 
-The health endpoint is `GET http://127.0.0.1:8000/api/v1/health`; it returns:
+The migration test expects its own empty database and upgrades it to the latest revision before cleaning it up. Do not point either test URL at a database containing data you need.
 
-```json
-{ "status": "ok" }
-```
+## Email delivery
 
-## Docker
+Email runs in a separate Compose worker. To test setup links locally, configure Gmail SMTP in `.env` with a Google App Password (not your regular account password), then start the worker:
 
-Start local PostgreSQL with Docker Compose, then apply migrations:
-
-```sh
-docker compose up -d db
-uv run alembic upgrade head
-```
-
-Compose publishes PostgreSQL on port 5432, stores its data in the `postgres_data` volume, and waits for `pg_isready` before reporting the database healthy. It creates `ctms_test` and `ctms_migration_test` on initial database setup. Set `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_PORT` in `.env` to override local defaults. Build the API image separately with `docker build -t ctms .`.
-
-## Staff onboarding and email worker
-
-Copy `.env.example` to `.env` and replace the JWT secret and Gmail SMTP placeholders. For Gmail, create an App Password and use it as `SMTP_PASSWORD`; do not use your regular Gmail password. `DATABASE_URL` is for the API running on the host; `WORKER_DATABASE_URL` uses the Compose database host name. Run migrations before starting the worker:
-
-```sh
-uv run alembic upgrade head
+```powershell
 docker compose up -d --build email-worker
 ```
 
-The staff endpoint is `POST /api/v1/profiles/staff`. An Admin may create Mentors; a Super Admin may create Admins. Each new Profile is inactive, and its profile plus a durable outbox event are committed together. The separate worker sends the setup email and retries failed delivery with exponential backoff, capped by `WORKER_RETRY_MAX_SECONDS`. Setup tokens are stored as hashes and expire after 24 hours. Configure `SETUP_LINK_BASE_URL` to the page that accepts the `token` query parameter and posts the chosen password to `POST /api/v1/auth/setup-password`.
+The API stores email work in PostgreSQL’s outbox; the worker sends it and retries failures. `DATABASE_URL` is used by the API on your host, while `WORKER_DATABASE_URL` uses the Compose service name `db`. Set `SETUP_LINK_BASE_URL` to the page that reads the `token` query parameter and submits the chosen password to `POST /api/v1/auth/setup-password`.
 
-`POST /api/v1/auth/login` returns a 15-minute JWT for active users. Protected requests use `Authorization: Bearer <accessToken>`.
+## PostgreSQL and Docker
 
-## Project Docs
+Compose runs PostgreSQL 16 on port 5432 and stores its data in the `postgres_data` volume. It also creates `ctms_test` and `ctms_migration_test` on the first initialization. Set `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, or `POSTGRES_PORT` in `.env` to change the local defaults.
 
-- [Entity relationship diagram](docs/ERD.md)
-- [API specification](docs/api-spec.md)
-- [Public application widget setup](docs/application-widget.md)
-- [Project overview](docs/idea-one-pager.md)
-- [Work plan](docs/work-plan.md)
+PostgreSQL reads `POSTGRES_PASSWORD` when it initializes a new data volume. Changing that setting later does not change the password already stored in an existing volume; update the PostgreSQL role password as well if you rotate it.
 
-## Project Structure
-
-```text
-CTMS/
-├── app/
-│   ├── api/                      # HTTP routers and request dependencies
-│   ├── core/                     # Configuration, database, and security
-│   ├── models/                   # SQLAlchemy persistence models
-│   ├── schemas/                  # Request and response validation
-│   ├── services/                 # Business workflows
-│   ├── cli.py                    # Operator commands such as first-admin setup
-│   └── main.py                   # FastAPI application
-├── alembic/                      # Database migration history
-├── docs/                         # Product and API references
-├── tests/                        # Automated tests
-├── docker-compose.yml            # Local PostgreSQL service
-├── Dockerfile                    # API image
-├── pyproject.toml                # Dependencies and project configuration
-└── README.md
-```
+The Dockerfile builds the API image, but Compose currently starts only PostgreSQL and the email worker. Build the API image with `docker build -t ctms .`.
