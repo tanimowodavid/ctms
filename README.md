@@ -6,6 +6,7 @@ The project is a FastAPI backend with a small public application form that can b
 
 ## Project notes
 
+- [Local run and Postman end-to-end guide](learn.md)
 - [API specification](docs/api-spec.md)
 - [Data model](docs/ERD.md)
 - [Application widget setup](docs/application-widget.md)
@@ -48,6 +49,14 @@ uv run python -m app.cli bootstrap-super-admin
 ```
 
 The command prompts for credentials and refuses to create a second Super Admin. Admins and Super Admins can create cohorts and review applications. Mentors and newly approved Talents complete account setup through a one-time email link.
+
+For a disposable local database, you can create a complete Postman demo dataset instead of bootstrapping an individual Super Admin:
+
+```powershell
+uv run python -m app.cli seed-demo
+```
+
+The command prompts for one password and creates a future-start cohort, five tracks, and active Super Admin, Admin, and Mentor demo accounts. All four accounts share the password you enter. It refuses to run if the database already contains a profile or cohort, and it does not delete or overwrite existing data. Use this only for local development; the seeded accounts use reserved `.local` email addresses and are not intended for real email delivery. See [the Postman walkthrough](learn.md) for the account names and end-to-end steps.
 
 ## Try the application form
 
