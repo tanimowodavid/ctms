@@ -1,17 +1,17 @@
 # CTMS Progress Tracker
 
-Last reviewed: 2026-10-22
+Last reviewed: 2026-10-23
 
 ## Current state
 
-The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, staff onboarding, cohort/track management, public application intake with a standalone widget, and Admin/Super Admin application review with Talent onboarding. Messaging workflows remain unimplemented.
+The repository has a modular FastAPI backend with versioned routing, PostgreSQL persistence, JWT authentication, staff onboarding, cohort/track management, public application intake with a standalone widget, Admin/Super Admin application review with Talent onboarding, and messaging endpoints. Messaging authorization and lifecycle integration coverage passes with the full PostgreSQL test suite.
 
 Verified implementation observations:
 
 - [x] FastAPI app exposes `GET /api/v1/health` returning `{"status":"ok"}`.
 - [x] Python package and core modules exist for configuration, database setup, security, models, schemas, services, and endpoint modules.
 - [x] `uv` project metadata and lockfile are present; the project requires Python 3.12+.
-- [x] Pytest suite uses dedicated PostgreSQL test databases; nineteen tests pass, including fresh-database migration, application review/onboarding, staff onboarding, cohort management, public application intake/CORS, and email-worker retry coverage.
+- [x] Pytest suite uses dedicated PostgreSQL test databases; twenty tests pass, including fresh-database migration, application review/onboarding, staff onboarding, cohort management, public application intake/CORS, messaging authorization, and email-worker retry coverage.
 - [x] Alembic is configured with an initial schema migration. Offline SQL generation was verified for PostgreSQL.
 - [x] API v1 routers are registered by `app/api/v1/api.py`.
 - [x] API v1 exposes health, login, password setup, staff onboarding, cohort/track endpoints, public widget options/submission, and Admin/Super Admin application listing, detail, approval, and rejection. Messaging endpoints remain unimplemented.
@@ -31,8 +31,10 @@ Verified implementation observations:
 - [x] Approved applications create an inactive Talent Profile assigned to the application's cohort and track. The email worker sends a Talent setup link using the existing hashed, single-use 24-hour setup-token flow; completing setup activates the Talent.
 - [x] Application review tests cover Admin authorization, listing filters, detail, post-intake approval, transactional outbox creation, Talent password setup and login, rejection without Profile creation, repeat processing, and existing Profile email conflicts.
 - [x] Active Profile login issues 15-minute JWT access tokens; protected requests reload Profile status and role from PostgreSQL.
+- [x] Messaging provides accessible conversation discovery, chronological paginated history, and authenticated message creation. Staff can access all conversations; Talents are scoped to their own general and assigned-track conversations. Suspended accounts receive `403` for protected routes.
+- [x] Messaging integration coverage for authorization scope, sender identity, and suspended access passes. Full suite: 20 passed; fresh migration test included. Python compilation and `git diff --check` pass.
 - [ ] No formatter, linter, type checker, or CI workflow is configured.
-- [ ] Messaging and the complete application-to-chat lifecycle are not implemented.
+- [x] Messaging endpoints and messaging authorization integration coverage are implemented. Full application-to-chat lifecycle coverage remains to be added.
 
 The checked source and tests prove the cohort/track, public intake, and application review/onboarding workflows. Other model/service/schema modules are not evidence that their intended business workflows are complete.
 

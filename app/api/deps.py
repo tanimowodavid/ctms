@@ -30,6 +30,8 @@ def get_current_user(
 	if payload.get("type") != "access" or not isinstance(payload.get("sub"), str):
 		raise unauthorized
 	profile = session.get(Profile, payload["sub"])
+	if profile is not None and profile.status == "SUSPENDED":
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is suspended")
 	if profile is None or profile.status != "ACTIVE":
 		raise unauthorized
 	return profile

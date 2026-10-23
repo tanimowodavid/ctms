@@ -92,12 +92,12 @@ Rate limiting and bot protection are out of scope for this project.
 
 ## 8. Messaging and authorization
 
-- [ ] Implement accessible Conversation discovery.
-- [ ] Implement chronological Message history with validated pagination and sender data.
-- [ ] Implement message creation with sender identity derived only from authentication.
-- [ ] Allow staff access across cohorts/tracks.
-- [ ] Allow Talents access only to own cohort general chat and assigned track chat.
-- [ ] Deny suspended Talent access to discovery, reads, and writes.
+- [x] Implement accessible Conversation discovery.
+- [x] Implement chronological Message history with validated pagination and sender data.
+- [x] Implement message creation with sender identity derived only from authentication.
+- [x] Allow staff access across cohorts/tracks.
+- [x] Allow Talents access only to own cohort general chat and assigned track chat.
+- [x] Deny suspended Talent access to discovery, reads, and writes.
 - [ ] Test guessed IDs, other cohorts/tracks, unauthorized roles, and all allowed paths.
 
 ## 9. Integration and release
