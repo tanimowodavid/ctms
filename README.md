@@ -6,7 +6,7 @@ The project is a FastAPI backend with a small public application form that can b
 
 ## Project notes
 
-- [Local run and Postman end-to-end guide](learn.md)
+- [Local run and Postman end-to-end guide](local-run.md)
 - [API specification](docs/api-spec.md)
 - [Data model](docs/ERD.md)
 - [Application widget setup](docs/application-widget.md)
